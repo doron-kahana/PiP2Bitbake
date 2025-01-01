@@ -10,7 +10,7 @@ ___
 
 **DISCLAIMER**
 * This is a fork! Not the original repo (https://github.com/robseb/PiP2Bitbake).
-* The original scripts requires manual input from the user. This fork automatically generates .bb recipes from a requirements.txt file.
+* The original script requires manual input from the user. This fork automatically generates .bb recipes from a requirements.txt file.
 * The script does not handle every license, **make sure to check license string in the generated recipe!**
 
 
