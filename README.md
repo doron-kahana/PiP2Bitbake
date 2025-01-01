@@ -28,17 +28,17 @@ ___
     ```bash
      python3 makePipRecipes.py /path/to/requirements.txt
     ````
-4. **The Python script will generate a *".bb"*-Bitbake-file**
-     * **Copy** the generated recipe file to your recipes:
+4. The Python script will generate a *".bb"* Bitbake recipe
+     * Copy the generated recipe file to your layer's recipes:
        ```txt 
           meta-example
           |- conf
           | - README
-          |- recipes-test
-             |- test
+          |- recipes-example
+             |- python3-<package_name>
                 |-python3-<package_name>_<version>.bb
        ```
-5. **Include the Python pip package in your Yocto Build by adding following line to your `local.conf`**
+5. Include the Python pip package in your Yocto Build by adding following line to your `local.conf`
     ```txt 
     IMAGE_INSTALL:append = "python3-<package_name>"
     ````
