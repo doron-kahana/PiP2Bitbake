@@ -1,8 +1,8 @@
-# PiP2Bitbake (fork, auto-generates recipes)
+# pip2bitbake (fork, auto-generates recipes)
 ![GitHub](https://img.shields.io/static/v1?label=Ubuntu&message=18.04+LTS,+20.04+LTS&color=yellowgreen)
 ![GitHub](https://img.shields.io/static/v1?label=CentOS&message=7.0,+8.0&color=blue)
 ![GitHub](https://img.shields.io/static/v1?label=Python&message=3.10&color=green)
-![GitHub](https://img.shields.io/github/license/doron-kahana/PiP2Bitbake)
+![GitHub](https://img.shields.io/github/license/doron-kahana/pip2bitbake)
 
 ![Alt text](doc/concept.png?raw=true "Concept")
 ___
@@ -22,11 +22,11 @@ ___
 # How to use this script
 1. Clone this repository:
     ```bash
-    git clone git@github.com:doron-kahana/PiP2Bitbake.git
+    git clone git@github.com:doron-kahana/pip2bitbake.git
     ````
 2. Create a virtual environment and install the required packages:
     ```bash
-    cd PiP2Bitbake
+    cd pip2bitbake
     python3 -m venv .venv    # Can use virtualenv instead
     source .venv/bin/activate
     pip install -r requirements.txt
@@ -64,6 +64,6 @@ ___
 &nbsp;
 [![GitHub](https://i.sstatic.net/tskMh.png) GitHub](https://github.com/doron-kahana)
 <!-- 
-[![GitHub stars](https://img.shields.io/github/stars/doron-kahana/PiP2Bitbake?style=social)](https://github.com/doron-kahana/PiP2Bitbake/stargazers)
-[![GitHub watchers](https://img.shields.io/github/watchers/doron-kahana/PiP2Bitbake?style=social)](https://github.com/doron-kahana/PiP2Bitbake/watchers)
+[![GitHub stars](https://img.shields.io/github/stars/doron-kahana/pip2bitbake?style=social)](https://github.com/doron-kahana/pip2bitbake/stargazers)
+[![GitHub watchers](https://img.shields.io/github/watchers/doron-kahana/pip2bitbake?style=social)](https://github.com/doron-kahana/pip2bitbake/watchers)
  -->
