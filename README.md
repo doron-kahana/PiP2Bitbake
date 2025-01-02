@@ -34,7 +34,7 @@ ___
 3. Run the script with the path to the requirements.txt file.
    The script will generate *".bb"* Bitbake recipes under `recipes/`:
     ```bash
-     python3 makePipRecipes.py /path/to/requirements.txt
+     python3 pip2bb.py /path/to/requirements.txt
     ````
 
 # How to integrate the generated recipes into your Yocto Build
