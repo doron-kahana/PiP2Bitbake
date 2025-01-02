@@ -128,8 +128,15 @@ async def extract_license_from_pypi(package_name):
         async with session.get(PYPI_URL.format(package_name)) as response:
             if response.status == 200:
                 data = await response.json()
-                license_type = data['info'].get('license')
-                return license_type if license_type else "UNKNOWN"
+                lic_type = data['info'].get('license')
+                # If full license, get license from classifier
+                if not lic_type or len(lic_type) > 80:
+                    classifiers = data['info'].get('classifiers', [])
+                    for classifier in classifiers:
+                        if 'License :: OSI Approved ::' in classifier:
+                            lic_type = classifier.split('::')[-1].strip()
+                            break
+                return lic_type if lic_type else "UNKNOWN"
             return "UNKNOWN"
 
 def extract_license_from_file(working_dir):
@@ -151,43 +158,95 @@ def extract_license_from_file(working_dir):
                     return "UNKNOWN"
     return "UNKNOWN"
 
-def create_bitbake_recipe(package_name, version, md5sum, sha256sum, license_type):
+def create_bitbake_recipe(pkg_name, pkg_ver, pkg_md5sum, pkg_sha256sum, lic_filename, lic_type, lic_md5sum):
     """Create a Bitbake recipe file for the package with a proper license."""
     recipe_content = f"""
-SUMMARY = "Python package {package_name}"
-HOMEPAGE = "https://pypi.org/project/{package_name}/"
-LICENSE = "{license_type}"
-LIC_FILES_CHKSUM = "file://LICENSE;md5={md5sum}"
+SUMMARY = "Python package {pkg_name}"
+HOMEPAGE = "https://pypi.org/project/{pkg_name}/"
+LICENSE = "{lic_type}"
+LIC_FILES_CHKSUM = "file://{lic_filename};md5={lic_md5sum}"
 
-SRC_URI = "https://files.pythonhosted.org/packages/source/{package_name[0]}/{package_name}/{package_name}-{version}.tar.gz;md5={md5sum};sha256={sha256sum}"
+SRC_URI = "https://files.pythonhosted.org/packages/source/{pkg_name[0]}/{pkg_name}/{pkg_name}-{pkg_ver}.tar.gz"
 
 inherit pypi setuptools3
 
-SRC_URI[md5sum] = "{md5sum}"
-SRC_URI[sha256sum] = "{sha256sum}"
+SRC_URI[md5sum] = "{pkg_md5sum}"
+SRC_URI[sha256sum] = "{pkg_sha256sum}"
 """
-    recipe_filename = f"python3-{package_name}_{version}.bb"
+    recipe_filename = f"python3-{pkg_name}_{pkg_ver}.bb"
     with open(f"{RECIPES_DIR}/{recipe_filename}", 'w') as f:
         f.write(recipe_content)
     print(f"Bitbake recipe created: {recipe_filename}")
 
-async def process_package(package_entry):
+async def process_package(package_entry: str):
     """Process a single Python package and generate its Bitbake recipe."""
     try:
-        package_name, package_version = package_entry.split('==')
-        package_file = await download_package(package_name, package_version)
-        md5sum, sha256sum = calculate_checksums(package_file)
-        extract_package(package_file)
+        lic_filename = ""
+        lic_type = "UNKNOWN"
+        lic_md5sum = ""
+
+        pkg_info = re.match(r'^\s*([^\[\]=<>~!]+)(?:\[([^\]]+)\])?(?:([<>=!~]+.*))?', package_entry.split('#')[0].strip()).groups()
+        if not pkg_info:
+            raise ValueError(f"Invalid package entry: {package_entry}")
+        pkg_name = pkg_info[0]
+        pkg_ver = pkg_info[2]
+
+        # Remove specifiers from the version
+        match = re.match(r'^(==|~=|>=|<=)', pkg_ver)
+        if match:
+            pkg_ver = pkg_ver[2:]
+
+        pkg_filename = await download_package(pkg_name, pkg_ver)
+        pkg_md5sum, pkg_sha256sum = calculate_checksums(pkg_filename)
+        extract_package(pkg_filename)
 
         # First try to get the license from PyPI metadata
-        license_type = await extract_license_from_pypi(package_name)
-        if license_type == "UNKNOWN":
-            # If not found, attempt to extract license from the package files
-            license_type = extract_license_from_file(WORKING_DIR)
+        lic_type = await extract_license_from_pypi(pkg_name)
 
-        create_bitbake_recipe(package_name, package_version, md5sum, sha256sum, license_type)
+        if lic_type == "UNKNOWN":
+            # If not found, attempt to extract license from the package files
+            lic_type = extract_license_from_file(WORKING_DIR)
+
+        # Regardless of the license source, calculate the MD5 of the license file if it exists
+        lic_md5sum = None
+        if pkg_filename.endswith('.tar.gz'):
+            pkg_filename_no_ext = pkg_filename.split('/')[-1].split('.tar.gz')[0]
+        elif pkg_filename.endswith('.zip'):
+            pkg_filename_no_ext = pkg_filename.split('/')[-1].split('.zip')[0]
+        lic_file = find_license_file(f'{WORKING_DIR}/{pkg_filename_no_ext}')
+        if lic_file:
+            lic_filename = os.path.basename(lic_file)
+            lic_md5sum = calculate_md5(lic_file)
+        else:
+            print(f"\tERROR: License file not found for {pkg_name} {pkg_ver}")
+
+        lic_filename = '' if not lic_filename else lic_filename
+        lic_md5sum = '' if not lic_md5sum else lic_md5sum
+
+        create_bitbake_recipe(pkg_name, pkg_ver, pkg_md5sum, pkg_sha256sum, lic_filename, lic_type, lic_md5sum)
     except Exception as e:
         print(f"Error processing {package_entry}: {e}")
+
+def calculate_md5(file_path: str) -> str:
+    """Calculate and return the MD5 checksum of a file."""
+    md5_hash = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(8192):
+            md5_hash.update(chunk)
+    return md5_hash.hexdigest()
+
+def find_license_file(directory: str) -> str:
+    """Find the license file within a directory, including subdirectories, efficiently."""
+    possible_files = {'LICENSE', 'LICENSE.txt', 'LICENSE.md', 'COPYING', 'COPYRIGHT'}  # Set for O(1) lookup
+
+    # Walk through all subdirectories and files in the given directory
+    for root, dirs, files in os.walk(directory):
+        # Find the first license file in the current directory
+        for file in possible_files:
+            if file in files:
+                return os.path.join(root, file)
+
+    return None
 
 def print_final_message():
     print('\n################################################################################')
@@ -224,7 +283,6 @@ async def main():
     await asyncio.gather(*tasks)
 
     shutil.rmtree(WORKING_DIR)
-    print("All recipes generated successfully.")
     print_final_message()
 
 

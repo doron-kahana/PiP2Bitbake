@@ -1,7 +1,7 @@
 # PiP2Bitbake (fork, auto-generates recipes)
 ![GitHub](https://img.shields.io/static/v1?label=Ubuntu&message=18.04+LTS,+20.04+LTS&color=yellowgreen)
 ![GitHub](https://img.shields.io/static/v1?label=CentOS&message=7.0,+8.0&color=blue)
-![GitHub](https://img.shields.io/static/v1?label=Python&message=3.7&color=green)
+![GitHub](https://img.shields.io/static/v1?label=Python&message=3.10&color=green)
 ![GitHub](https://img.shields.io/github/license/robseb/PiP2Bitbake)
 
 ![Alt text](doc/concept.png?raw=true "Concept")
